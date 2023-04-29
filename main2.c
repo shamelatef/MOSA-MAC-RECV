@@ -397,9 +397,11 @@ void TransceiverModeRx (int channel_number) {
     struct tm *local_time;
     int Message;
     time_t last_str_time = time(NULL);  // initialize the last "MOSA 1" time to now
+    FILE *fp;
+
     while(1)
     {
-
+            fp = fopen("data.csv", "a");
             memset(&buffer[0], 0, sizeof(buffer));
 
             recievedBytes = sl_Recv(socket_hanlde, buffer, 4000, 0);
@@ -417,13 +419,14 @@ void TransceiverModeRx (int channel_number) {
 
                 time(&current_time);
                 local_time = localtime(&current_time);
-                local_time->tm_sec += 8 * 60 * 60; // Add 8 hours
+                local_time->tm_sec += 9 * 60 * 60; // Add 8 hours
                 mktime(local_time);
 
 
 
                 UART_PRINT("%s  |    %d        | %d:%d:%d \n\r",str,Message,local_time->tm_hour,local_time->tm_min,local_time->tm_sec);
-
+                fprintf(fp, "%s,%d,%d:%d:%d", str, Message,local_time->tm_hour,local_time->tm_min,local_time->tm_sec);
+                fclose(fp);
             }/*else {
                 // Check if more than STR_TIMEOUT_SEC seconds have elapsed since the last "MOSA 1" message
                 time_t now = time(NULL);
