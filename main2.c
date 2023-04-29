@@ -427,7 +427,8 @@ void TransceiverModeRx (int channel_number) {
                 UART_PRINT("%s  |    %d        | %d:%d:%d \n\r",str,Message,local_time->tm_hour,local_time->tm_min,local_time->tm_sec);
                 fprintf(fp, "%s,%d,%d:%d:%d", str, Message,local_time->tm_hour,local_time->tm_min,local_time->tm_sec);
                 fclose(fp);
-            }/*else {
+            }
+            /*else {
                 // Check if more than STR_TIMEOUT_SEC seconds have elapsed since the last "MOSA 1" message
                 time_t now = time(NULL);
                 double elapsed_time = difftime(now, last_str_time);
