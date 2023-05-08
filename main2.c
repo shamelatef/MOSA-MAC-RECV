@@ -437,6 +437,9 @@ int socket_hanlde = -1;
 int temperature;
 char* str;
 unsigned char buffer[1500] = {'\0'};
+SlTransceiverRxOverHead_t *frameRadioHeader = NULL;
+int recievedBytes = 0;
+time_t start_time;
 /**************************************************************************************/
 /**************************************************************************************/
 
@@ -460,7 +463,7 @@ if (local_time->tm_sec == NodeNumber*5 && Node < 1)
         isInit=1;
     }
 
-UART_PRINT("%d\n",isInit);
+//UART_PRINT("%d\n",isInit);
 
 return isInit;
 
@@ -474,11 +477,6 @@ return isInit;
 /**************************************************************************************/
                     /*Displayes received data:  MAC | Temp | TIME */
 /**************************************************************************************/
-SlTransceiverRxOverHead_t *frameRadioHeader = NULL;
-
-
-
-int recievedBytes = 0;
 
 
 void Received_Data( char* NodeName)
@@ -493,16 +491,21 @@ void Received_Data( char* NodeName)
 
 if (strcmp(str,NodeName)==0)                                            // node 1
 {
-   // last_str_time = time(NULL);
+    start_time = time(NULL); // get current time - assuming that the node initially working
 
     UART_PRINT("______________________________\n\r");
     temperature = buffer[70];
 
     time(&current_time);
     local_time = localtime(&current_time);
-    local_time->tm_sec += 9 * 60 * 60; // Add 8 hours
+    local_time->tm_sec += 9 * 60 * 60; // Add 9 hours
     mktime(local_time);
     UART_PRINT("%s  |    %d        | %d:%d:%d \n\r",str,temperature,local_time->tm_hour,local_time->tm_min,local_time->tm_sec);
+
+}
+if (difftime(time(NULL), start_time) > 20 )
+{
+    UART_PRINT("Node %s is DOWN\n\r",NodeName);
 
 }
 
@@ -514,7 +517,7 @@ void TransceiverModeRx (int channel_number,SlRateIndex_e rate,int iTxPowerLevel)
 
     socket_hanlde= sl_Socket(SL_AF_RF, SL_SOCK_RAW, channel_number);
 
-    while(1)
+   while(1)
 
     {
 
@@ -525,9 +528,10 @@ void TransceiverModeRx (int channel_number,SlRateIndex_e rate,int iTxPowerLevel)
 
         //Generic_Func(0,12,50,30);
        // Generic_Func(1,12,50,30);
-        if (Generic_Func(0,12,50,30,0x31) == 1 /* && Generic_Func(1,12,50,30)==1*/ )
+        if (Generic_Func(0,12,50,30,0x31) == 1  && Generic_Func(1,12,50,30,0x32)==1 )
 
         {
+
             break;
         }
     }
@@ -535,18 +539,8 @@ void TransceiverModeRx (int channel_number,SlRateIndex_e rate,int iTxPowerLevel)
 
     while(1)
     {
-
-
-
             Received_Data("MOSA 1");
-
-
-
-
-
-
-
-                }
+    }
 
 
 
