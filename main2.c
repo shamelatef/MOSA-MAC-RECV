@@ -22,8 +22,50 @@ extern uVectorEntry __vector_table;
 //****************************************************************************
 //                      LOCAL FUNCTION PROTOTYPES
 //****************************************************************************
+char RawData_Ping[] = {
+       /*---- wlan header start -----*/
+                               0x88,                                /* version , type sub type */
+                               0x02,                                /* Frame control flag */
+                               0x2C, 0x00,
+                               0x4D, 0x4F, 0x53, 0x41,0x20, 0x31,  /* destination */
+                               0x00, 0x22, 0x75, 0x55,0x55, 0x55,   /* bssid */
+                               0x4D, 0x4F, 0x53, 0x41,0x20, 0x30,   /* source */ /*SINK MOSA 0 */
+                               0x80, 0x42, 0x00, 0x00,
+                               0xAA, 0xAA, 0x03, 0x00, 0x00, 0x00, 0x08, 0x00, /* LLC */
+                              /*---- ip header start -----*/
+                               0x45, 0x00, 0x00, 0x54, 0x96, 0xA1, 0x00, 0x00, 0x40, 0x01,
+                               0x57, 0xFA,                          /* checksum */
+                               0x0A, 0x14, 0x1E, 0x28,              /* src ip  10.20.30.40 */
+                               0x0A, 0x14, 0x1E, 0x29,
+                               /* payload - ping/icmp */
+                               0x08, 0x00, 0xA5, 0x51,
+                               0x5E, 0x18, 0x00, 0x00, 0x68, 0x65, 0x6C, 0x6C, 0x6F, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                               0x00, 0x00, 0x00, 0x00};
+
+
+
+
 static void DisplayBanner(char * AppName);
 static void BoardInit(void);
+
 
 
 
@@ -366,6 +408,9 @@ typedef struct
 
 }TransceiverRxOverHead_t;
 
+/**************************************************************************************/
+        /*Function to convert an array of hexa to a string "Used for MAC Address"*/
+/**************************************************************************************/
 
 char* array_to_string(unsigned char* arr, size_t arr_len) {
     char* str = malloc(arr_len + 1);
@@ -377,68 +422,128 @@ char* array_to_string(unsigned char* arr, size_t arr_len) {
     }
     return str;
 }
-
-
+/**************************************************************************************/
+                                    /*GLOBAL VARIABLES*/
+/**************************************************************************************/
 #define STR_TIMEOUT_SEC 20
+FILE *fp;
+time_t current_time;
+struct tm *local_time;
+//time_t last_str_time = time(NULL);  // initialize the last "MOSA 1" time to now
+int Node = 0 ;
+int isInit=0;
+long lRetVal =-1;
+int socket_hanlde = -1;
+int temperature;
+char* str;
+unsigned char buffer[1500] = {'\0'};
+/**************************************************************************************/
+/**************************************************************************************/
 
-void TransceiverModeRx (int channel_number) {
 
-    SlTransceiverRxOverHead_t *frameRadioHeader = NULL;
 
-    unsigned char buffer[1500] = {'\0'};
+/**************************************************************************************
+ /*Syncronize  all the nodes function to start at different times using one real time clock*/
+/**************************************************************************************/
 
-    int socket_hanlde = -1;
+int Generic_Func(int NodeNumber,int channel_number, int iTxPowerLevel,SlRateIndex_e rate,char Dest_MAC)
+{
 
-    int recievedBytes = 0;
+
+if (local_time->tm_sec == NodeNumber*5 && Node < 1)
+    {
+        Node++;
+        RawData_Ping[9] = Dest_MAC;
+        lRetVal = sl_Send(socket_hanlde,RawData_Ping,sizeof(RawData_Ping),\
+                   SL_RAW_RF_TX_PARAMS(channel_number,  rate, iTxPowerLevel, PREAMBLE));
+
+        isInit=1;
+    }
+
+UART_PRINT("%d\n",isInit);
+
+return isInit;
+
+}
+/**************************************************************************************/
+/**************************************************************************************/
+
+
+
+
+/**************************************************************************************/
+                    /*Displayes received data:  MAC | Temp | TIME */
+/**************************************************************************************/
+SlTransceiverRxOverHead_t *frameRadioHeader = NULL;
+
+
+
+int recievedBytes = 0;
+
+
+void Received_Data( char* NodeName)
+{
+    //UART_PRINT("%s\n\r",NodeName);
+    memset(&buffer[0], 0, sizeof(buffer));
+
+    recievedBytes = sl_Recv(socket_hanlde, buffer, 4000, 0);
+    frameRadioHeader = (SlTransceiverRxOverHead_t *)buffer;
+    unsigned char SRCMAC[6] = {buffer[24],buffer[25],buffer[26],buffer[27],buffer[28],buffer[29]};
+    char* str = array_to_string(SRCMAC, 6);
+
+if (strcmp(str,NodeName)==0)                                            // node 1
+{
+   // last_str_time = time(NULL);
+
+    UART_PRINT("______________________________\n\r");
+    temperature = buffer[70];
+
+    time(&current_time);
+    local_time = localtime(&current_time);
+    local_time->tm_sec += 9 * 60 * 60; // Add 8 hours
+    mktime(local_time);
+    UART_PRINT("%s  |    %d        | %d:%d:%d \n\r",str,temperature,local_time->tm_hour,local_time->tm_min,local_time->tm_sec);
+
+}
+
+}
+
+void TransceiverModeRx (int channel_number,SlRateIndex_e rate,int iTxPowerLevel) {
+
+
 
     socket_hanlde= sl_Socket(SL_AF_RF, SL_SOCK_RAW, channel_number);
 
-    time_t current_time;
-    struct tm *local_time;
-    int Message;
-    time_t last_str_time = time(NULL);  // initialize the last "MOSA 1" time to now
-    FILE *fp;
+    while(1)
+
+    {
+
+        time(&current_time);
+        local_time = localtime(&current_time);
+        local_time->tm_sec += 9 * 60 * 60; // Add 8 hours
+        mktime(local_time);
+
+        //Generic_Func(0,12,50,30);
+       // Generic_Func(1,12,50,30);
+        if (Generic_Func(0,12,50,30,0x31) == 1 /* && Generic_Func(1,12,50,30)==1*/ )
+
+        {
+            break;
+        }
+    }
+
 
     while(1)
     {
-            fp = fopen("data.csv", "a");
-            memset(&buffer[0], 0, sizeof(buffer));
-
-            recievedBytes = sl_Recv(socket_hanlde, buffer, 4000, 0);
-            frameRadioHeader = (SlTransceiverRxOverHead_t *)buffer;
-            unsigned char SRCMAC[6] = {buffer[24],buffer[25],buffer[26],buffer[27],buffer[28],buffer[29]};
-            char* str = array_to_string(SRCMAC, 6);
-
-
-            if (strcmp(str,"MOSA 1")==0)                                            // node 1
-            {
-                last_str_time = time(NULL);
-
-                UART_PRINT("______________________________\n\r");
-                Message = buffer[70];
-
-                time(&current_time);
-                local_time = localtime(&current_time);
-                local_time->tm_sec += 9 * 60 * 60; // Add 8 hours
-                mktime(local_time);
 
 
 
-                UART_PRINT("%s  |    %d        | %d:%d:%d \n\r",str,Message,local_time->tm_hour,local_time->tm_min,local_time->tm_sec);
-                fprintf(fp, "%s,%d,%d:%d:%d", str, Message,local_time->tm_hour,local_time->tm_min,local_time->tm_sec);
-                fclose(fp);
-            }
-            /*else {
-                // Check if more than STR_TIMEOUT_SEC seconds have elapsed since the last "MOSA 1" message
-                time_t now = time(NULL);
-                double elapsed_time = difftime(now, last_str_time);
+            Received_Data("MOSA 1");
 
-                if (elapsed_time >= STR_TIMEOUT_SEC) {
-                    // Timeout occurred, print error message and break out of loop
-                    UART_PRINT("No \"MOSA 1\" message received for a long time \n\r");
-                    break;
-                }
-            }*/
+
+
+
+
 
 
                 }
@@ -496,10 +601,9 @@ int main()
     }
     UART_PRINT("SRC MAC | Temperature | Time \n\r");
 
-while(1)
-{
-    TransceiverModeRx(12);
-}
+
+    TransceiverModeRx(12,30,50);
+
 
 
 
