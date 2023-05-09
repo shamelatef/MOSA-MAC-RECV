@@ -238,22 +238,22 @@ static long ConfigureSimpleLinkToDefaultState()
     lMode = sl_Start(0, 0, 0);
     ASSERT_ON_ERROR(lMode);
 
-    // If the device is not in station-mode, try configuring it in station-mode 
+    // If the device is not in station-mode, try configuring it in station-mode
     if (ROLE_STA != lMode)
     {
         if (ROLE_AP == lMode)
         {
-            // If the device is in AP mode, we need to wait for this event 
-            // before doing anything 
+            // If the device is in AP mode, we need to wait for this event
+            // before doing anything
             while(!IS_IP_ACQUIRED(g_ulStatus))
             {
 #ifndef SL_PLATFORM_MULTI_THREADED
-              _SlNonOsMainLoopTask(); 
+              _SlNonOsMainLoopTask();
 #endif
             }
         }
 
-        // Switch to STA role and restart 
+        // Switch to STA role and restart
         lRetVal = sl_WlanSetMode(ROLE_STA);
         ASSERT_ON_ERROR(lRetVal);
 
@@ -263,21 +263,21 @@ static long ConfigureSimpleLinkToDefaultState()
         lRetVal = sl_Start(0, 0, 0);
         ASSERT_ON_ERROR(lRetVal);
 
-        // Check if the device is in station again 
+        // Check if the device is in station again
         if (ROLE_STA != lRetVal)
         {
-            // We don't want to proceed if the device is not coming up in STA-mode 
+            // We don't want to proceed if the device is not coming up in STA-mode
             return DEVICE_NOT_IN_STATION_MODE;
         }
     }
-    
+
     // Get the device's version-information
     ucConfigOpt = SL_DEVICE_GENERAL_VERSION;
     ucConfigLen = sizeof(ver);
-    lRetVal = sl_DevGet(SL_DEVICE_GENERAL_CONFIGURATION, &ucConfigOpt, 
+    lRetVal = sl_DevGet(SL_DEVICE_GENERAL_CONFIGURATION, &ucConfigOpt,
                                 &ucConfigLen, (unsigned char *)(&ver));
     ASSERT_ON_ERROR(lRetVal);
-    
+
    // UART_PRINT("Host Driver Version: %s\n\r",SL_DRIVER_VERSION);
     /*
     UART_PRINT("Build Version %d.%d.%d.%d.31.%d.%d.%d.%d.%d.%d.%d.%d\n\r",
@@ -287,9 +287,9 @@ static long ConfigureSimpleLinkToDefaultState()
     ver.ChipFwAndPhyVersion.PhyVersion[0],ver.ChipFwAndPhyVersion.PhyVersion[1],
     ver.ChipFwAndPhyVersion.PhyVersion[2],ver.ChipFwAndPhyVersion.PhyVersion[3]);
 */
-    // Set connection policy to Auto + SmartConfig 
+    // Set connection policy to Auto + SmartConfig
     //      (Device's default connection policy)
-    lRetVal = sl_WlanPolicySet(SL_POLICY_CONNECTION, 
+    lRetVal = sl_WlanPolicySet(SL_POLICY_CONNECTION,
                                 SL_CONNECTION_POLICY(1, 0, 0, 0, 1), NULL, 0);
     ASSERT_ON_ERROR(lRetVal);
 
@@ -297,12 +297,12 @@ static long ConfigureSimpleLinkToDefaultState()
     lRetVal = sl_WlanProfileDel(0xFF);
     ASSERT_ON_ERROR(lRetVal);
 
-    
+
 
     //
     // Device in station-mode. Disconnect previous connection if any
     // The function returns 0 if 'Disconnected done', negative number if already
-    // disconnected Wait for 'disconnection' event if 0 is returned, Ignore 
+    // disconnected Wait for 'disconnection' event if 0 is returned, Ignore
     // other return-codes
     //
     lRetVal = sl_WlanDisconnect();
@@ -312,7 +312,7 @@ static long ConfigureSimpleLinkToDefaultState()
         while(IS_CONNECTED(g_ulStatus))
         {
 #ifndef SL_PLATFORM_MULTI_THREADED
-              _SlNonOsMainLoopTask(); 
+              _SlNonOsMainLoopTask();
 #endif
         }
     }
@@ -329,7 +329,7 @@ static long ConfigureSimpleLinkToDefaultState()
     // Set Tx power level for station mode
     // Number between 0-15, as dB offset from max power - 0 will set max power
     ucPower = 0;
-    lRetVal = sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID, 
+    lRetVal = sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID,
             WLAN_GENERAL_PARAM_OPT_STA_TX_POWER, 1, (unsigned char *)&ucPower);
     ASSERT_ON_ERROR(lRetVal);
 
@@ -351,7 +351,7 @@ static long ConfigureSimpleLinkToDefaultState()
     ASSERT_ON_ERROR(lRetVal);
 
     InitializeAppVariables();
-    
+
     return lRetVal; // Success
 }
 
@@ -528,7 +528,7 @@ void TransceiverModeRx (int channel_number,SlRateIndex_e rate,int iTxPowerLevel)
 
         //Generic_Func(0,12,50,30);
        // Generic_Func(1,12,50,30);
-        if (Generic_Func(0,12,50,30,0x31) == 1  && Generic_Func(1,12,50,30,0x32)==1 )
+        if (Generic_Func(0,12,50,30,0x31) == 1  /*&& Generic_Func(1,12,50,30,0x32)==1*/ )
 
         {
 
