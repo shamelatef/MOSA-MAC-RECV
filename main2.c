@@ -440,6 +440,7 @@ unsigned char buffer[1500] = {'\0'};
 SlTransceiverRxOverHead_t *frameRadioHeader = NULL;
 int recievedBytes = 0;
 time_t start_time;
+
 /**************************************************************************************/
 /**************************************************************************************/
 
@@ -492,6 +493,7 @@ void Received_Data( char* NodeName)
 if (strcmp(str,NodeName)==0)                                            // node 1
 {
     start_time = time(NULL); // get current time - assuming that the node initially working
+    fp= fopen("file.csv", "a");
 
     UART_PRINT("______________________________\n\r");
     temperature = buffer[70];
@@ -501,11 +503,18 @@ if (strcmp(str,NodeName)==0)                                            // node 
     local_time->tm_sec += 9 * 60 * 60; // Add 9 hours
     mktime(local_time);
     UART_PRINT("%s  |    %d        | %d:%d:%d \n\r",str,temperature,local_time->tm_hour,local_time->tm_min,local_time->tm_sec);
+    fprintf(fp, "%d:%d:%d,%d,%s\n", local_time->tm_hour,local_time->tm_min,local_time->tm_sec, temperature ,str);
+    fclose(fp);
 
 }
 if (difftime(time(NULL), start_time) > 20 )
 {
+    fp= fopen("file.csv", "a");
+
     UART_PRINT("Node %s is DOWN\n\r",NodeName);
+    fprintf(fp, "%d:%d:%d,Node %s is down,%s", local_time->tm_hour,local_time->tm_min,local_time->tm_sec, NodeName ,str);
+    fclose(fp);
+
 
 }
 
@@ -516,6 +525,9 @@ void TransceiverModeRx (int channel_number,SlRateIndex_e rate,int iTxPowerLevel)
 
 
     socket_hanlde= sl_Socket(SL_AF_RF, SL_SOCK_RAW, channel_number);
+    fp= fopen("file.csv", "a");
+
+    fprintf(fp,"Time,Temperature,MAC\n");
 
    while(1)
 
