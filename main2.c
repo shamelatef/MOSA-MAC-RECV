@@ -440,6 +440,11 @@ unsigned char buffer[1500] = {'\0'};
 SlTransceiverRxOverHead_t *frameRadioHeader = NULL;
 int recievedBytes = 0;
 time_t start_time;
+int G1 = 0;
+int G2 = 0;
+int G3 = 0;
+int frame = 30;
+int space = 5;
 
 /**************************************************************************************/
 /**************************************************************************************/
@@ -450,9 +455,7 @@ time_t start_time;
  /*Syncronize  all the nodes function to start at different times using one real time clock*/
 /**************************************************************************************/
 
-int Generic_Func(int NodeNumber,int channel_number, int iTxPowerLevel,SlRateIndex_e rate,char Dest_MAC)
-{
-
+int Generic_Func(int NodeNumber,int channel_number, int iTxPowerLevel,SlRateIndex_e rate,char Dest_MAC){
 
 if (local_time->tm_sec == NodeNumber*5 && Node < 1)
     {
@@ -469,8 +472,6 @@ if (local_time->tm_sec == NodeNumber*5 && Node < 1)
 return isInit;
 
 }
-/**************************************************************************************/
-/**************************************************************************************/
 
 
 
@@ -490,9 +491,9 @@ void Received_Data( char* NodeName)
     unsigned char SRCMAC[6] = {buffer[24],buffer[25],buffer[26],buffer[27],buffer[28],buffer[29]};
     char* str = array_to_string(SRCMAC, 6);
 
-if (strcmp(str,NodeName)==0)                                            // node 1
+if (strcmp(str,NodeName)==0  )                                            // node 1
 {
-    start_time = time(NULL); // get current time - assuming that the node initially working
+   // start_time = time(NULL); // get current time - assuming that the node initially working
     fp= fopen("file.csv", "a");
 
     UART_PRINT("______________________________\n\r");
@@ -507,7 +508,7 @@ if (strcmp(str,NodeName)==0)                                            // node 
     fclose(fp);
 
 }
-if (difftime(time(NULL), start_time) > 20 )
+/*if (difftime(time(NULL), start_time) > 20 )
 {
     fp= fopen("file.csv", "a");
 
@@ -516,23 +517,19 @@ if (difftime(time(NULL), start_time) > 20 )
     fclose(fp);
 
 
-}
+}*/
 
 }
+
+
 
 void TransceiverModeRx (int channel_number,SlRateIndex_e rate,int iTxPowerLevel) {
 
-
-
     socket_hanlde= sl_Socket(SL_AF_RF, SL_SOCK_RAW, channel_number);
     fp= fopen("file.csv", "a");
-
     fprintf(fp,"Time,Temperature,MAC\n");
 
-   while(1)
-
-    {
-
+   while(1){
         time(&current_time);
         local_time = localtime(&current_time);
         local_time->tm_sec += 9 * 60 * 60; // Add 8 hours
@@ -540,23 +537,17 @@ void TransceiverModeRx (int channel_number,SlRateIndex_e rate,int iTxPowerLevel)
 
         //Generic_Func(0,12,50,30);
        // Generic_Func(1,12,50,30);
-        if (Generic_Func(0,12,50,30,0x31) == 1  /*&& Generic_Func(1,12,50,30,0x32)==1*/ )
-
-        {
-
-            break;
-        }
+        if (Generic_Func(0,12,50,30,0x31) == 1  ) {G1=1;}
+        isInit = 0;
+        if (Generic_Func(1,12,50,30,0x32) == 1  ) {G2=1;}
+        isInit = 0;
+        if ((G1+G2) == 2){break;}
     }
 
-
-    while(1)
-    {
+    while(1){
             Received_Data("MOSA 1");
+            //Received_Data("MOSA 2");
     }
-
-
-
-
 
     sl_Close(socket_hanlde);
 
@@ -564,9 +555,7 @@ void TransceiverModeRx (int channel_number,SlRateIndex_e rate,int iTxPowerLevel)
 
 
 
-int main()
-{
-
+int main(){
 
     long lRetVal = -1;
     unsigned char policyVal;
@@ -577,8 +566,7 @@ int main()
     InitializeAppVariables();
 
     lRetVal = ConfigureSimpleLinkToDefaultState();
-    if(lRetVal < 0)
-    {
+    if(lRetVal < 0){
         if (DEVICE_NOT_IN_STATION_MODE == lRetVal)
           UART_PRINT("Failed to configure the device in its default state \n\r");
           LOOP_FOREVER();
@@ -606,6 +594,7 @@ int main()
         LOOP_FOREVER();
     }
     UART_PRINT("SRC MAC | Temperature | Time \n\r");
+
 
 
     TransceiverModeRx(12,30,50);
